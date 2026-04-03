@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered agentic chatbot with multi-agent workflows, tool usage, and intelligent conversation">
+    <title>Agentic AI Chatbot</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Highlight.js for code blocks -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <span class="logo-text">AgentChat</span>
+            </div>
+            <button id="new-chat-btn" class="btn-new-chat" title="New Chat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="sidebar-search">
+            <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input type="text" id="search-input" placeholder="Search conversations..." autocomplete="off">
+            </div>
+        </div>
+
+        <div class="sidebar-conversations" id="conversation-list">
+            <!-- Conversations populated by JS -->
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-footer-item" id="sidebar-settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span>Settings</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════ SIDEBAR TOGGLE ════════════════ -->
+    <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+    </button>
+
+    <!-- ═══════════════════ MAIN CHAT AREA ═══════════════════ -->
+    <main id="main-content" class="main-content">
+
+        <!-- Welcome Screen (shown when no chat is active) -->
+        <div id="welcome-screen" class="welcome-screen">
+            <div class="welcome-container">
+                <div class="welcome-orb"></div>
+                <h1 id="greeting-text" class="welcome-greeting">Good evening</h1>
+                <p class="welcome-subtitle">How can I help you today?</p>
+
+                <div class="welcome-cards">
+                    <div class="welcome-card" data-prompt="Search the web for the latest AI news today">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                        </div>
+                        <span>Search the web</span>
+                        <p>Find latest information</p>
+                    </div>
+                    <div class="welcome-card" data-prompt="Get the current stock price of AAPL and GOOGL">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                        </div>
+                        <span>Stock prices</span>
+                        <p>Real-time market data</p>
+                    </div>
+                    <div class="welcome-card" data-prompt="Explain how neural networks work in simple terms">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                            </svg>
+                        </div>
+                        <span>Explain concepts</span>
+                        <p>Learn anything new</p>
+                    </div>
+                    <div class="welcome-card" data-prompt="Help me write a Python function to sort a list using merge sort">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                            </svg>
+                        </div>
+                        <span>Write code</span>
+                        <p>Debug & develop</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages Area (hidden until chat starts) -->
+        <div id="chat-area" class="chat-area hidden">
+            <div id="messages-container" class="messages-container">
+                <!-- Messages rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="typing-indicator hidden">
+            <div class="typing-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════ INPUT AREA ════════════════ -->
+        <div class="input-area">
+            <div class="input-container">
+                <div class="input-top-row">
+                    <div class="input-actions-left">
+                        <button id="btn-tools" class="input-action-btn" title="Tools">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                            </svg>
+                            <span class="btn-label">Tools</span>
+                        </button>
+                    </div>
+                    <textarea
+                        id="message-input"
+                        placeholder="Ask anything..."
+                        rows="1"
+                        autofocus
+                    ></textarea>
+                    <div class="input-actions-right">
+                        <div class="model-selector" id="model-selector">
+                            <button class="model-btn" id="model-btn">
+                                <span id="model-label">Gemini 2.5 Flash</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron-icon">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
+                            <div class="model-dropdown hidden" id="model-dropdown">
+                                <div class="dropdown-header">Select Model</div>
+                                <div class="dropdown-section">
+                                    <div class="dropdown-section-title">OpenAI</div>
+                                    <button class="dropdown-item" data-provider="openai" data-model="gpt-4o">
+                                        <span class="provider-dot openai"></span>GPT-4o
+                                    </button>
+                                    <button class="dropdown-item" data-provider="openai" data-model="gpt-4o-mini">
+                                        <span class="provider-dot openai"></span>GPT-4o Mini
+                                    </button>
+                                </div>
+                                <div class="dropdown-section">
+                                    <div class="dropdown-section-title">Google</div>
+                                    <button class="dropdown-item" data-provider="gemini" data-model="gemini-2.5-flash">
+                                        <span class="provider-dot gemini"></span>Gemini 2.5 Flash
+                                    </button>
+                                    <button class="dropdown-item" data-provider="gemini" data-model="gemini-2.5-flash-lite">
+                                        <span class="provider-dot gemini"></span>Gemini 2.5 Flash-Lite
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="send-btn" class="btn-send" title="Send message" disabled>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p class="input-disclaimer">AgentChat can make mistakes. Check important info.</p>
+        </div>
+    </main>
+
+    <!-- ═══════════════ TOOL MODE POPUP ════════════════ -->
+    <div id="tool-popup" class="tool-popup hidden">
+        <div class="tool-popup-content">
+            <div class="tool-popup-header">
+                <span>Select tool mode</span>
+                <button id="tool-popup-close" class="popup-close">✕</button>
+            </div>
+            <button class="tool-option active" data-mode="auto">
+                <div class="tool-option-icon">∞</div>
+                <div class="tool-option-info">
+                    <strong>Auto</strong>
+                    <span>Decides when to use tools automatically</span>
+                </div>
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button class="tool-option" data-mode="manual">
+                <div class="tool-option-icon">☐</div>
+                <div class="tool-option-info">
+                    <strong>Manual</strong>
+                    <span>Asks permission before using any tools</span>
+                </div>
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button class="tool-option" data-mode="none">
+                <div class="tool-option-icon">✕</div>
+                <div class="tool-option-info">
+                    <strong>None</strong>
+                    <span>Do not use tools</span>
+                </div>
+                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ CONTEXT MENU ════════════════ -->
+    <div id="context-menu" class="context-menu hidden">
+        <button class="context-item" data-action="rename">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span>Rename</span>
+        </button>
+        <button class="context-item danger" data-action="delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Delete</span>
+        </button>
+    </div>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

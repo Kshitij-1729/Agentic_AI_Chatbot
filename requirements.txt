@@ -1,0 +1,28 @@
+# Flask
+flask
+flask-cors
+
+# Environment
+python-dotenv
+
+# LangChain Core
+langchain
+langchain-core
+
+# LangChain LLM Providers
+langchain-openai
+langchain-google-genai
+
+# LangChain Community (tools)
+langchain-community
+
+# LangGraph
+langgraph
+
+# Tools
+duckduckgo-search
+tavily-python
+yfinance
+
+# Database
+mysql-connector-python
