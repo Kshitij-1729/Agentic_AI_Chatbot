@@ -34,11 +34,17 @@ const DOM = {
     modelLabel: $("#model-label"),
     modelDropdown: $("#model-dropdown"),
     modelSelector: $("#model-selector"),
-    toolPopup: $("#tool-popup"),
-    toolPopupClose: $("#tool-popup-close"),
-    btnTools: $("#btn-tools"),
     contextMenu: $("#context-menu"),
     greetingText: $("#greeting-text"),
+    sidebarFiles: $("#sidebar-files"),
+    closeSidebarBtn: $("#close-sidebar-btn"),
+    sidebarOverlay: $("#sidebar-overlay"),
+    filesArea: $("#files-area"),
+    btnUploadHeader: $("#btn-upload-file-header"),
+    fileUploadInputHeader: $("#file-upload-input-header"),
+    btnUpload: $("#btn-upload"),
+    fileUploadInput: $("#file-upload-input"),
+    filesTbody: $("#files-tbody"),
 };
 
 // ─── Initialize ─────────────────────────────────────────────
@@ -86,6 +92,13 @@ function bindEvents() {
     DOM.newChatBtn.addEventListener("click", newChat);
     DOM.searchInput.addEventListener("input", filterConversations);
 
+    // Files UI
+    DOM.sidebarFiles.addEventListener("click", showFilesArea);
+    DOM.btnUpload.addEventListener("click", () => DOM.fileUploadInput.click());
+    DOM.btnUploadHeader.addEventListener("click", () => DOM.fileUploadInputHeader.click());
+    DOM.fileUploadInput.addEventListener("change", handleFileUpload);
+    DOM.fileUploadInputHeader.addEventListener("change", handleFileUpload);
+
     // Send message
     DOM.sendBtn.addEventListener("click", sendMessage);
     DOM.messageInput.addEventListener("keydown", (e) => {
@@ -111,24 +124,7 @@ function bindEvents() {
         });
     });
 
-    // Tool mode
-    DOM.btnTools.addEventListener("click", () => {
-        DOM.toolPopup.classList.remove("hidden");
-    });
-    DOM.toolPopupClose.addEventListener("click", () => {
-        DOM.toolPopup.classList.add("hidden");
-    });
-    DOM.toolPopup.addEventListener("click", (e) => {
-        if (e.target === DOM.toolPopup) DOM.toolPopup.classList.add("hidden");
-    });
-
-    $$(".tool-option").forEach((opt) => {
-        opt.addEventListener("click", () => {
-            selectToolMode(opt.dataset.mode);
-        });
-    });
-
-    // Welcome cards
+    // Close dropdowns / context menus on outside click
     $$(".welcome-card").forEach((card) => {
         card.addEventListener("click", () => {
             const prompt = card.dataset.prompt;
@@ -152,11 +148,17 @@ function bindEvents() {
     // Escape key closes modals
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
-            DOM.toolPopup.classList.add("hidden");
             DOM.modelDropdown.classList.add("hidden");
             DOM.contextMenu.classList.add("hidden");
         }
     });
+
+    if (DOM.closeSidebarBtn) {
+        DOM.closeSidebarBtn.addEventListener("click", toggleSidebar);
+    }
+    if (DOM.sidebarOverlay) {
+        DOM.sidebarOverlay.addEventListener("click", toggleSidebar);
+    }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -292,6 +294,7 @@ function filterConversations() {
 
 function newChat() {
     state.currentConversationId = null;
+    DOM.filesArea.classList.add("hidden");
     DOM.welcomeScreen.classList.remove("hidden");
     DOM.chatArea.classList.add("hidden");
     DOM.messagesContainer.innerHTML = "";
@@ -316,6 +319,7 @@ async function openConversation(conversationId) {
         if (activeItem) activeItem.classList.add("active");
 
         // Show chat area
+        DOM.filesArea.classList.add("hidden");
         DOM.welcomeScreen.classList.add("hidden");
         DOM.chatArea.classList.remove("hidden");
         DOM.messagesContainer.innerHTML = "";
@@ -602,20 +606,6 @@ function updateModelLabel() {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  TOOL MODE
-// ═══════════════════════════════════════════════════════════
-
-function selectToolMode(mode) {
-    state.toolMode = mode;
-
-    $$(".tool-option").forEach((opt) => {
-        opt.classList.toggle("active", opt.dataset.mode === mode);
-    });
-
-    DOM.toolPopup.classList.add("hidden");
-}
-
-// ═══════════════════════════════════════════════════════════
 //  UTILITIES
 // ═══════════════════════════════════════════════════════════
 
@@ -635,4 +625,114 @@ function escapeHtml(str) {
     const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FILES MODULE (RAG)
+// ═══════════════════════════════════════════════════════════
+
+function showFilesArea() {
+    DOM.chatArea.classList.add("hidden");
+    DOM.welcomeScreen.classList.add("hidden");
+    DOM.filesArea.classList.remove("hidden");
+    
+    $$(".conv-item.active").forEach((el) => el.classList.remove("active"));
+    
+    if (window.innerWidth <= 768) {
+        document.body.classList.add("sidebar-hidden");
+    }
+    
+    fetchFiles();
+}
+
+async function fetchFiles() {
+    try {
+        const res = await fetch("/api/files");
+        if (!res.ok) throw new Error("Failed to fetch files");
+        const files = await res.json();
+        
+        DOM.filesTbody.innerHTML = "";
+        if (files.length === 0) {
+            DOM.filesTbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-tertiary);">No files uploaded yet.</td></tr>`;
+            return;
+        }
+        
+        files.forEach(f => {
+            const sizeKB = (f.file_size / 1024).toFixed(1);
+            const date = new Date(f.uploaded_at).toLocaleDateString();
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>
+                    <div class="file-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <span>${escapeHtml(f.file_name)}</span>
+                    </div>
+                </td>
+                <td>${sizeKB} KB</td>
+                <td>${date}</td>
+            `;
+            DOM.filesTbody.appendChild(tr);
+        });
+    } catch (err) {
+        showToast("Error loading files", "error");
+    }
+}
+
+async function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    DOM.fileUploadInput.value = "";
+    DOM.fileUploadInputHeader.value = "";
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    showToast(`Uploading and embedding ${file.name}...`, "info");
+    
+    try {
+        const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || "Upload failed");
+        }
+        
+        showToast("Upload and embedding successful!", "success");
+        if (!DOM.filesArea.classList.contains("hidden")) {
+            fetchFiles();
+        }
+    } catch (err) {
+        showToast(err.message, "error");
+    }
+}
+
+function showToast(message, type="info") {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span class="toast-message">${escapeHtml(message)}</span>`;
+    
+    container.appendChild(toast);
+    
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add("show")));
+    
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }

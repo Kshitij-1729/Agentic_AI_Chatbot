@@ -186,3 +186,61 @@ def run_agent(
             "agent_type": "chat",
             "intent": "error",
         }
+
+def run_agent_stream(
+    user_input: str,
+    conversation_id: str,
+    llm_provider: str = "openai",
+    llm_model: str = None,
+    tool_mode: str = "auto",
+    summary: str = "",
+    history_messages: list = None,
+):
+    """
+    Run the full agentic workflow and yield events (SSE).
+    """
+    from langchain_core.messages import HumanMessage, AIMessageChunk, ToolMessage
+
+    messages = []
+    if history_messages:
+        messages.extend(history_messages)
+    messages.append(HumanMessage(content=user_input))
+
+    initial_state = {
+        "messages": messages,
+        "conversation_id": conversation_id,
+        "user_input": user_input,
+        "intent": "",
+        "agent_type": "",
+        "agent_response": "",
+        "tool_calls_log": [],
+        "summary": summary,
+        "llm_provider": llm_provider,
+        "llm_model": llm_model or "",
+        "tool_mode": tool_mode,
+        "needs_summarization": False,
+        "message_count": 0,
+    }
+
+    try:
+        for msg, metadata in workflow.stream(initial_state, stream_mode="messages"):
+            if isinstance(msg, AIMessageChunk):
+                # If there are tool calls in this chunk
+                if hasattr(msg, "tool_call_chunks") and msg.tool_call_chunks:
+                    for tc in msg.tool_call_chunks:
+                        if "name" in tc and tc["name"]:
+                            yield {"event": "tool_start", "data": {"name": tc["name"]}}
+                # Text content
+                if msg.content:
+                    yield {"event": "text", "data": msg.content}
+            elif isinstance(msg, ToolMessage):
+                yield {"event": "tool_end", "data": {"name": msg.name}}
+                
+        # Send a final 'done' event so the frontend knows we gracefully completed
+        yield {"event": "done", "data": {}}
+        
+    except Exception as e:
+        print(f"[Graph Stream] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        yield {"event": "error", "error": str(e)}

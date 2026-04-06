@@ -249,6 +249,64 @@ def update_settings(conversation_id):
 
 
 # ═══════════════════════════════════════════════════════════
+#  RAG / Files CRUD
+# ═══════════════════════════════════════════════════════════
+
+from werkzeug.utils import secure_filename
+from tools.rag_tool import ingest_document
+from tools.vectorless_rag_tool import ingest_pdf_vectorless
+
+os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+
+@app.route("/api/upload", methods=["POST"])
+def upload_file():
+    if "file" not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+        
+    filename = secure_filename(file.filename)
+    
+    # Check duplicate
+    existing = db.get_uploaded_file_by_name(filename)
+    if existing:
+        return jsonify({"error": "File already uploaded"}), 409
+        
+    file_path = os.path.join(Config.UPLOAD_FOLDER, filename)
+    file.save(file_path)
+    file_size = os.path.getsize(file_path)
+    
+    try:
+        # Ingestion pipeline
+        ingest_document(file_path, filename)
+        
+        # Trigger vectorless ingestion if PDF
+        if filename.lower().endswith(".pdf"):
+            ingest_pdf_vectorless(file_path, filename)
+        
+        # Save to DB
+        db.add_uploaded_file(filename, file_path, file_size)
+        return jsonify({"success": True, "file_name": filename})
+    except Exception as e:
+        traceback.print_exc()
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/files", methods=["GET"])
+def get_files():
+    try:
+        files = db.list_uploaded_files()
+        for f in files:
+            if f.get("uploaded_at"):
+                f["uploaded_at"] = f["uploaded_at"].isoformat()
+        return jsonify(files)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ═══════════════════════════════════════════════════════════
 #  Providers & Health
 # ═══════════════════════════════════════════════════════════
 

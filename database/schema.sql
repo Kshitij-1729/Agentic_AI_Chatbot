@@ -139,3 +139,17 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 -- ============================================================
 INSERT IGNORE INTO user_preferences (user_name, preferred_provider, preferred_model, preferred_tool_mode, theme)
 VALUES ('default', 'openai', 'gpt-4o', 'auto', 'dark');
+
+-- ============================================================
+-- 7. UPLOADED FILES TABLE
+--    Tracks documents uploaded for RAG system
+-- ============================================================
+CREATE TABLE IF NOT EXISTS uploaded_files (
+    id                  INT             AUTO_INCREMENT PRIMARY KEY,
+    file_name           VARCHAR(255)    NOT NULL,
+    file_path           VARCHAR(500)    NOT NULL,
+    file_size           INT             NOT NULL DEFAULT 0,
+    uploaded_at         TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE INDEX idx_file_name (file_name)
+) ENGINE=InnoDB;

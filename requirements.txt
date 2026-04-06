@@ -23,6 +23,17 @@ langgraph
 duckduckgo-search
 tavily-python
 yfinance
+ddgs
 
 # Database
 mysql-connector-python
+
+# Search Tool
+duckduckgo-search
+
+# RAG Tools
+chromadb
+langchain-chroma
+pypdf
+python-docx
+pageindex

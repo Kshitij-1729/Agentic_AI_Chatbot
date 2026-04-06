@@ -65,3 +65,21 @@ logs/
 # Databases
 *.sqlite3
 *.db
+
+# Uploads — user-uploaded files (PDFs, docs, etc.)
+uploads/
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.csv
+*.pptx
+*.ppt
+*.txt
+*.png
+*.jpg
+*.jpeg
+
+# Vector store — ChromaDB embeddings
+chroma_db/

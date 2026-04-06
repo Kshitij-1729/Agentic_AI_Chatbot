@@ -251,3 +251,32 @@ def log_agent_execution(
         (conversation_id, message_id, agent_type, node_name, input_summary, output_summary, execution_time_ms),
         fetch=False,
     )
+
+# ================================================================
+#  UPLOADED FILES
+# ================================================================
+
+def add_uploaded_file(file_name: str, file_path: str, file_size: int) -> int:
+    """Record an uploaded file."""
+    return DB.execute_query(
+        """
+        INSERT INTO uploaded_files (file_name, file_path, file_size)
+        VALUES (%s, %s, %s)
+        """,
+        (file_name, file_path, file_size),
+        fetch=False,
+    )
+
+def get_uploaded_file_by_name(file_name: str) -> Optional[dict]:
+    """Retrieve an uploaded file by its name."""
+    rows = DB.execute_query(
+        "SELECT * FROM uploaded_files WHERE file_name = %s",
+        (file_name,)
+    )
+    return rows[0] if rows else None
+
+def list_uploaded_files() -> list:
+    """Get a list of all uploaded files, ordered newest first."""
+    return DB.execute_query(
+        "SELECT * FROM uploaded_files ORDER BY uploaded_at DESC"
+    )
