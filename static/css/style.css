@@ -146,7 +146,9 @@ a:hover { text-decoration: underline; }
 
 .sidebar.collapsed {
     transform: translateX(-100%);
-    width: var(--sidebar-width);
+    width: 0;
+    border-right: none;
+    overflow: hidden;
 }
 
 .sidebar-overlay {
