@@ -13,15 +13,27 @@ Your job is to analyze the user's query and determine which specialized agent sh
 
 Available agents:
 1. **chat** — General conversation, Q&A, reasoning, calculations, coding help, tool usage (search, stock prices). This is the DEFAULT for most queries.
-2. **crag** — Corrective Retrieval-Augmented Generation. For queries that need document retrieval and fact-checking against knowledge bases. (Currently under development)
+2. **crag** — Corrective Retrieval-Augmented Generation. For queries about uploaded documents, PDFs, or files. Retrieves from the knowledge base, evaluates relevance, and self-corrects via web search if needed. Provides fact-checked, document-grounded answers.
 3. **blog** — Blog content generation, article writing, content creation tasks. (Currently under development)
 4. **travel** — Travel planning, itineraries, destination info, flight/hotel recommendations. (Currently under development)
 5. **academic** — Academic research, paper summaries, study help, citation assistance. (Currently under development)
 
-IMPORTANT RULES:
-- Since agents 2-5 (crag, blog, travel, academic) are still under development, route ALL queries to "chat" for now.
-- In the future, you will route to specialized agents when they are ready.
-- Respond with ONLY the agent name (one word): chat, crag, blog, travel, or academic
+ROUTING RULES:
+- Route to "crag" when:
+  * The user asks about content from uploaded documents, PDFs, or files
+  * The user references "my documents", "uploaded files", "the PDF", "the file", etc.
+  * The user wants document-grounded, fact-checked answers from their knowledge base
+  * The query is a knowledge retrieval question that would benefit from document search with verification
+- Route to "chat" for:
+  * General conversation and Q&A
+  * Coding help, calculations, reasoning
+  * Real-time data (stock prices, current news)
+  * Web searches for general information
+  * Any query NOT specifically about uploaded documents
+- Do NOT route to blog, travel, or academic — they are still under development.
+- When in doubt, default to "chat".
+
+Respond with ONLY the agent name (one word): chat, crag, blog, travel, or academic
 
 User query: {user_input}
 """
@@ -30,7 +42,7 @@ User query: {user_input}
 def orchestrator_node(state: AgentState) -> dict:
     """
     Analyze user intent and decide the target agent.
-    Currently routes everything to 'chat' since other agents are placeholders.
+    Routes to 'chat' (default), 'crag' (document queries), or placeholder agents.
     """
     user_input = state.get("user_input", "")
     provider = state.get("llm_provider", "openai")
